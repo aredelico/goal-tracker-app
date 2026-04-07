@@ -9,6 +9,7 @@ export default function Layout({ active, onNavigate, children }) {
       <main
         className="flex-1 overflow-y-auto"
         style={{
+          paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
         }}
       >

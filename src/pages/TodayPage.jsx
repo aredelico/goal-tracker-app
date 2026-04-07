@@ -34,7 +34,7 @@ export default function TodayPage() {
       <div className="p-4 max-w-lg mx-auto">
         <header className="pt-2 mb-4 flex items-baseline justify-between">
           <h1 className="font-mono text-2xl font-bold text-text-primary tracking-wider">
-            TODAY
+            ROUTINE
           </h1>
           <span className="font-mono text-xs text-text-muted tracking-wider">
             {doneCount}/{GOALS.length} done
