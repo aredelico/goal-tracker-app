@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GOALS } from '../goals';
-import { db } from '../db';
+import { getCheckinsInRange } from '../db';
+import { useAuth } from '../AuthContext';
 import { today, addDays, formatDate, parseDate } from '../utils/dates';
 import { computeStreak } from '../utils/streak';
 
@@ -53,6 +54,7 @@ function cellBg(dateStr, goal, set) {
 }
 
 export default function CalendarPage() {
+  const { user } = useAuth();
   const [goalId, setGoalId] = useState(GOALS[0].id);
   const [checkinSet, setCheckinSet] = useState(new Set());
   const scrollRef = useRef(null);
@@ -63,12 +65,10 @@ export default function CalendarPage() {
 
   useEffect(() => {
     const from = addDays(today(), -(WEEKS * 7));
-    db.checkins
-      .where('goalId').equals(goalId)
-      .and((r) => r.date >= from && r.date <= today())
-      .toArray()
-      .then((rows) => setCheckinSet(new Set(rows.map((r) => r.date))));
-  }, [goalId]);
+    getCheckinsInRange(user.uid, from, today()).then((rows) =>
+      setCheckinSet(new Set(rows.filter((r) => r.goalId === goalId).map((r) => r.date)))
+    );
+  }, [user.uid, goalId]);
 
   // Scroll to the right (most recent week) on mount and goal change
   useEffect(() => {
