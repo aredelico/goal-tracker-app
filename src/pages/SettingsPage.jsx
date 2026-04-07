@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Download, Upload, Trash2, Info } from 'lucide-react';
-import { db, exportData, importData } from '../db';
+import { Download, Upload, Trash2, Info, LogOut } from 'lucide-react';
+import { exportData, importData, clearData } from '../db';
+import { useAuth } from '../AuthContext';
 import { today } from '../utils/dates';
 
 export default function SettingsPage() {
+  const { user, logOut } = useAuth();
   const [confirmClear, setConfirmClear] = useState(false);
   const [message, setMessage] = useState(null); // { text, color }
 
@@ -14,7 +16,7 @@ export default function SettingsPage() {
 
   async function handleExport() {
     try {
-      const json = await exportData();
+      const json = await exportData(user.uid);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -34,7 +36,7 @@ export default function SettingsPage() {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        await importData(ev.target.result);
+        await importData(user.uid, ev.target.result);
         flash('✓ Data imported');
       } catch {
         flash('✗ Invalid or corrupt file', '#ff2d78');
@@ -45,7 +47,7 @@ export default function SettingsPage() {
   }
 
   async function handleClear() {
-    await db.checkins.clear();
+    await clearData(user.uid);
     setConfirmClear(false);
     flash('All data cleared', '#ff2d78');
   }
@@ -133,15 +135,33 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* Account */}
+      <div className="glass rounded-xl overflow-hidden mb-4">
+        <div className="px-4 py-3 border-b border-border">
+          <p className="font-mono text-[10px] text-text-muted tracking-widest">ACCOUNT</p>
+        </div>
+        <div className="px-4 py-4 border-b border-border">
+          <p className="font-mono text-xs text-text-muted">Signed in as</p>
+          <p className="font-mono text-sm text-text-primary mt-0.5">{user.email}</p>
+        </div>
+        <button
+          onClick={logOut}
+          className="w-full flex items-center gap-4 px-4 py-4 hover:bg-surface-2 transition-colors text-left"
+        >
+          <LogOut size={16} className="text-text-muted flex-shrink-0" />
+          <p className="font-mono text-sm text-text-primary">Sign out</p>
+        </button>
+      </div>
+
       {/* About */}
       <div className="glass rounded-xl p-4 space-y-1.5">
         <div className="flex items-center gap-2 mb-2">
           <Info size={13} className="text-text-muted" />
           <p className="font-mono text-[10px] text-text-muted tracking-widest">ABOUT</p>
         </div>
-        <p className="font-mono text-xs text-text-muted">Goal Tracker v0.1.0</p>
+        <p className="font-mono text-xs text-text-muted">Goal Tracker v0.2.0</p>
         <p className="font-mono text-xs text-text-muted">Dark Terminal Meets Vinyl</p>
-        <p className="font-mono text-xs text-text-muted">All data stored locally · No cloud · No tracking</p>
+        <p className="font-mono text-xs text-text-muted">Data synced to Firebase · Accessible from any device</p>
       </div>
     </div>
   );

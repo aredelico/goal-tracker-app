@@ -1,39 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
-import { db, getAllCheckinsForDate, toggleCheckin, saveCheckinWithNotes } from '../db';
+import { getAllCheckinsForDate, toggleCheckin, saveCheckinWithNotes, getCheckinsInRange } from '../db';
+import { useAuth } from '../AuthContext';
 import { GOALS } from '../goals';
 import { computeStreak, computeBestStreak } from '../utils/streak';
 import { formatDate, parseDate } from '../utils/dates';
 
 export function useGoalData(date) {
+  const { user } = useAuth();
+  const uid = user.uid;
+
   const [checkins, setCheckins] = useState({});
   const [streaks, setStreaks] = useState({});
   const [bestStreaks, setBestStreaks] = useState({});
   const [historicalSets, setHistoricalSets] = useState({});
 
   useEffect(() => {
-    getAllCheckinsForDate(date).then((rows) => {
+    getAllCheckinsForDate(uid, date).then((rows) => {
       const map = {};
       rows.forEach((r) => { map[r.goalId] = r; });
       setCheckins(map);
     });
-  }, [date]);
+  }, [uid, date]);
 
   useEffect(() => {
     const from = formatDate(
       new Date(parseDate(date).setFullYear(parseDate(date).getFullYear() - 1))
     );
-    db.checkins
-      .where('date').between(from, date, true, true)
-      .toArray()
-      .then((rows) => {
-        const sets = {};
-        rows.forEach(({ goalId, date: d }) => {
-          if (!sets[goalId]) sets[goalId] = new Set();
-          sets[goalId].add(d);
-        });
-        setHistoricalSets(sets);
+    getCheckinsInRange(uid, from, date).then((rows) => {
+      const sets = {};
+      rows.forEach(({ goalId, date: d }) => {
+        if (!sets[goalId]) sets[goalId] = new Set();
+        sets[goalId].add(d);
       });
-  }, [date]);
+      setHistoricalSets(sets);
+    });
+  }, [uid, date]);
 
   useEffect(() => {
     const streakResult = {};
@@ -51,7 +52,7 @@ export function useGoalData(date) {
 
   const toggle = useCallback(
     async (goalId) => {
-      const done = await toggleCheckin(goalId, date);
+      const done = await toggleCheckin(uid, goalId, date);
       setCheckins((prev) => {
         const next = { ...prev };
         if (done) next[goalId] = { done: true, notes: '' };
@@ -60,18 +61,18 @@ export function useGoalData(date) {
       });
       return done;
     },
-    [date]
+    [uid, date]
   );
 
   const saveNotes = useCallback(
     async (goalId, notes) => {
-      await saveCheckinWithNotes(goalId, date, notes);
+      await saveCheckinWithNotes(uid, goalId, date, notes);
       setCheckins((prev) => ({
         ...prev,
         [goalId]: { ...prev[goalId], done: true, notes },
       }));
     },
-    [date]
+    [uid, date]
   );
 
   return { checkins, streaks, bestStreaks, toggle, saveNotes };

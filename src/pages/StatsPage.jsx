@@ -3,7 +3,8 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { GOALS } from '../goals';
-import { db } from '../db';
+import { getCheckinsInRange } from '../db';
+import { useAuth } from '../AuthContext';
 import { today, addDays, parseDate, getMondayOfWeek } from '../utils/dates';
 
 const PERIODS = ['7D', '30D', '90D'];
@@ -18,14 +19,12 @@ function countPossibleDays(goal, fromDate, totalDays) {
   return count;
 }
 
-async function loadStats(period) {
+async function loadStats(uid, period) {
   const days = PERIOD_DAYS[period];
   const toDate = today();
   const fromDate = addDays(toDate, -(days - 1));
 
-  const rows = await db.checkins
-    .where('date').between(fromDate, toDate, true, true)
-    .toArray();
+  const rows = await getCheckinsInRange(uid, fromDate, toDate);
 
   // Per-goal completion rates
   const goalStats = GOALS.map((goal) => {
@@ -85,16 +84,17 @@ const TOOLTIP_STYLE = {
 };
 
 export default function StatsPage() {
+  const { user } = useAuth();
   const [period, setPeriod] = useState('30D');
   const [goalStats, setGoalStats] = useState([]);
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
-    loadStats(period).then(({ goalStats, chartData }) => {
+    loadStats(user.uid, period).then(({ goalStats, chartData }) => {
       setGoalStats(goalStats);
       setChartData(chartData);
     });
-  }, [period]);
+  }, [user.uid, period]);
 
   return (
     <div className="p-4 max-w-lg mx-auto">
