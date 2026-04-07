@@ -21,16 +21,6 @@ export const GOALS = [
     color: '#00e5ff', // neon cyan
   },
   {
-    id: 'dj-gigs',
-    name: 'Vinyl DJ Gigs',
-    emoji: '🎶',
-    target: null,    // no fixed target
-    period: null,
-    days: null,
-    hasNotes: true,  // venue, event name, free text
-    color: '#bf5fff', // neon purple
-  },
-  {
     id: 'duolingo',
     name: 'Duolingo Italian',
     emoji: '🇮🇹',

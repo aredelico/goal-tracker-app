@@ -1,7 +1,7 @@
 import { Home, Calendar, BarChart2, Settings } from 'lucide-react';
 
 const TABS = [
-  { id: 'today',    label: 'Today',    Icon: Home },
+  { id: 'today',    label: 'Routine',  Icon: Home },
   { id: 'calendar', label: 'Calendar', Icon: Calendar },
   { id: 'stats',    label: 'Stats',    Icon: BarChart2 },
   { id: 'settings', label: 'Settings', Icon: Settings },
