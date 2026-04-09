@@ -3,7 +3,7 @@ export default function Toast({ toast }) {
 
   return (
     <div
-      className="fixed top-4 left-1/2 z-[200] px-4 py-2 rounded-lg font-mono text-sm pointer-events-none toast-enter"
+      className="fixed top-4 left-1/2 z-[300] px-4 py-2 rounded-lg font-mono text-sm pointer-events-none toast-enter"
       style={{
         transform: 'translateX(-50%)',
         color: toast.color,

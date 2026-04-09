@@ -3,9 +3,11 @@ import { Download, Upload, Trash2, Info, LogOut } from 'lucide-react';
 import { exportData, importData, clearData } from '../db';
 import { useAuth } from '../AuthContext';
 import { today } from '../utils/dates';
+import { useGoals } from '../GoalsContext';
 
 export default function SettingsPage() {
   const { user, logOut } = useAuth();
+  const { goals, updateGoal } = useGoals();
   const [confirmClear, setConfirmClear] = useState(false);
   const [message, setMessage] = useState(null); // { text, color }
 
@@ -71,6 +73,31 @@ export default function SettingsPage() {
           {message.text}
         </div>
       )}
+
+      {/* Goal colors */}
+      <div className="glass rounded-xl overflow-hidden mb-4">
+        <div className="px-4 py-3 border-b border-border">
+          <p className="font-mono text-[10px] text-text-muted tracking-widest">GOAL COLORS</p>
+        </div>
+        {goals.map((g) => (
+          <div key={g.id} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-b-0">
+            <span className="text-lg select-none">{g.emoji}</span>
+            <span className="font-mono text-sm text-text-primary flex-1">{g.name}</span>
+            <label className="relative cursor-pointer">
+              <div
+                className="w-8 h-8 rounded-full border-2 border-border transition-transform hover:scale-110"
+                style={{ background: g.color, boxShadow: `0 0 10px ${g.color}66` }}
+              />
+              <input
+                type="color"
+                value={g.color}
+                onChange={(e) => updateGoal(g.id, { color: e.target.value })}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              />
+            </label>
+          </div>
+        ))}
+      </div>
 
       {/* Data section */}
       <div className="glass rounded-xl overflow-hidden mb-4">
@@ -160,8 +187,8 @@ export default function SettingsPage() {
           <p className="font-mono text-[10px] text-text-muted tracking-widest">ABOUT</p>
         </div>
         <p className="font-mono text-xs text-text-muted">Goal Tracker v0.2.0</p>
-        <p className="font-mono text-xs text-text-muted">Dark Terminal Meets Vinyl</p>
-        <p className="font-mono text-xs text-text-muted">Data synced to Firebase · Accessible from any device</p>
+        <p className="font-mono text-xs text-text-muted">All rights reserved.</p>
+        <p className="font-mono text-xs text-text-muted">Contact: @peporila</p>
       </div>
     </div>
   );

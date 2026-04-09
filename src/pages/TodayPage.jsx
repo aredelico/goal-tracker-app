@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { GOALS } from '../goals';
+import { Plus } from 'lucide-react';
 import { today } from '../utils/dates';
 import { useGoalData } from '../hooks/useGoalData';
+import { useGoals } from '../GoalsContext';
 import DayNav from '../components/DayNav';
 import GoalCard from '../components/GoalCard';
 import Toast from '../components/Toast';
+import GoalFormModal from '../components/GoalFormModal';
 
 export default function TodayPage() {
+  const { goals, addGoal, updateGoal, deleteGoal } = useGoals();
   const [date, setDate] = useState(today);
-  const { checkins, streaks, toggle, saveNotes } = useGoalData(date);
+  const { checkins, streaks, toggle, saveNotes } = useGoalData(date, goals);
   const [toast, setToast] = useState(null);
+  const [modalGoal, setModalGoal] = useState(null); // null=closed, 'new'=add, goal obj=edit
 
   function showToast(message, color) {
     setToast({ message, color });
-    // Clear any existing timer by setting null first is not needed — just overwrite
     setTimeout(() => setToast(null), 2000);
   }
 
@@ -25,26 +28,54 @@ export default function TodayPage() {
     );
   }
 
-  const doneCount = GOALS.filter((g) => checkins[g.id]?.done).length;
+  async function handleSave(data) {
+    try {
+      if (modalGoal === 'new') {
+        await addGoal(data);
+      } else {
+        await updateGoal(modalGoal.id, data);
+      }
+      setModalGoal(null);
+    } catch (err) {
+      console.error('Failed to save goal:', err);
+      showToast('Failed to save goal', '#ff4466');
+    }
+  }
+
+  async function handleDelete(goalId) {
+    await deleteGoal(goalId);
+    setModalGoal(null);
+  }
+
+  const doneCount = goals.filter((g) => checkins[g.id]?.done).length;
 
   return (
     <>
       <Toast toast={toast} />
 
       <div className="p-4 max-w-lg mx-auto">
-        <header className="pt-2 mb-4 flex items-baseline justify-between">
+        <header className="pt-2 mb-4 flex items-center justify-between">
           <h1 className="font-mono text-2xl font-bold text-text-primary tracking-wider">
             ROUTINE
           </h1>
-          <span className="font-mono text-xs text-text-muted tracking-wider">
-            {doneCount}/{GOALS.length} done
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setModalGoal('new')}
+              className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
+              aria-label="Add goal"
+            >
+              <Plus size={16} className="text-text-muted" />
+            </button>
+            <span className="font-mono text-xs text-text-muted tracking-wider">
+              {doneCount}/{goals.length} done
+            </span>
+          </div>
         </header>
 
         <DayNav date={date} onChange={setDate} />
 
         <div className="space-y-3">
-          {GOALS.map((goal) => (
+          {goals.map((goal) => (
             <GoalCard
               key={goal.id}
               goal={goal}
@@ -52,10 +83,20 @@ export default function TodayPage() {
               streak={streaks[goal.id] ?? 0}
               onToggle={() => handleToggle(goal)}
               onSaveNotes={(notes) => saveNotes(goal.id, notes)}
+              onEdit={() => setModalGoal(goal)}
             />
           ))}
         </div>
       </div>
+
+      {modalGoal !== null && (
+        <GoalFormModal
+          goal={modalGoal === 'new' ? null : modalGoal}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onClose={() => setModalGoal(null)}
+        />
+      )}
     </>
   );
 }

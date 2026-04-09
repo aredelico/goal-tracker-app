@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 
+// ── Checkins ───────────────────────────────────────────────────────────────
 // Firestore path: users/{uid}/checkins/{goalId_date}
 // Document IDs are deterministic (goalId + date) so we can get/delete by ID directly.
 
@@ -34,7 +35,7 @@ export async function toggleCheckin(uid, goalId, date) {
   return true;
 }
 
-/** Upsert a check-in with notes (for dj-gigs). */
+/** Upsert a check-in with notes (for gig-type goals). */
 export async function saveCheckinWithNotes(uid, goalId, date, notes) {
   await setDoc(
     checkinRef(uid, goalId, date),
@@ -87,5 +88,41 @@ export async function clearData(uid) {
   const snap = await getDocs(checkinsCol(uid));
   const batch = writeBatch(firestore);
   snap.docs.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+}
+
+// ── Goals ──────────────────────────────────────────────────────────────────
+// Firestore path: users/{uid}/goals/{goalId}
+
+function goalsCol(uid) {
+  return collection(firestore, 'users', uid, 'goals');
+}
+
+function goalDocRef(uid, goalId) {
+  return doc(firestore, 'users', uid, 'goals', goalId);
+}
+
+/** Fetch all goals for a user, sorted by order. */
+export async function getGoals(uid) {
+  const snap = await getDocs(goalsCol(uid));
+  return snap.docs.map((d) => d.data()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+/** Create or update a single goal document. */
+export async function saveGoal(uid, goal) {
+  await setDoc(goalDocRef(uid, goal.id), goal);
+}
+
+/** Delete a goal document. */
+export async function removeGoal(uid, goalId) {
+  await deleteDoc(goalDocRef(uid, goalId));
+}
+
+/** Seed goals from hardcoded defaults. Only call when user has no goals yet. */
+export async function seedGoals(uid, goals) {
+  const batch = writeBatch(firestore);
+  goals.forEach((g, i) => {
+    batch.set(goalDocRef(uid, g.id), { ...g, order: i, tab: 'routine' });
+  });
   await batch.commit();
 }

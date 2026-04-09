@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import { Check, PencilLine } from 'lucide-react';
 
-export default function GoalCard({ goal, checkin, streak, onToggle, onSaveNotes }) {
+export default function GoalCard({ goal, checkin, streak, onToggle, onSaveNotes, onEdit }) {
   const checked = !!checkin?.done;
   const [notes, setNotes] = useState(checkin?.notes || '');
 
@@ -26,7 +26,7 @@ export default function GoalCard({ goal, checkin, streak, onToggle, onSaveNotes 
     >
       {/* Main row */}
       <div className="flex items-center gap-4 p-4">
-        <span className="text-2xl select-none">{goal.emoji}</span>
+        <span className="text-2xl select-none" style={{ filter: 'grayscale(1)' }}>{goal.emoji}</span>
 
         <div className="flex-1 min-w-0">
           <p
@@ -46,6 +46,17 @@ export default function GoalCard({ goal, checkin, streak, onToggle, onSaveNotes 
             )}
           </p>
         </div>
+
+        {/* Edit button */}
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="p-1.5 flex-shrink-0 text-text-muted opacity-30 hover:opacity-70 active:opacity-70 transition-opacity"
+            aria-label="Edit goal"
+          >
+            <PencilLine size={13} />
+          </button>
+        )}
 
         {/* Toggle button */}
         <button
