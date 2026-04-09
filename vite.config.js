@@ -15,6 +15,7 @@ export default defineConfig({
         background_color: '#0a0a0f',
         display: 'standalone',
         icons: [
+          { src: 'apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
       },

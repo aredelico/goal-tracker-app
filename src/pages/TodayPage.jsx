@@ -9,7 +9,8 @@ import Toast from '../components/Toast';
 import GoalFormModal from '../components/GoalFormModal';
 
 export default function TodayPage() {
-  const { goals, addGoal, updateGoal, deleteGoal } = useGoals();
+  const { goals: allGoals, addGoal, updateGoal, deleteGoal } = useGoals();
+  const goals = allGoals.filter((g) => !g.tab || g.tab === 'routine');
   const [date, setDate] = useState(today);
   const { checkins, streaks, toggle, saveNotes } = useGoalData(date, goals);
   const [toast, setToast] = useState(null);
@@ -31,7 +32,7 @@ export default function TodayPage() {
   async function handleSave(data) {
     try {
       if (modalGoal === 'new') {
-        await addGoal(data);
+        await addGoal({ ...data, tab: 'routine' });
       } else {
         await updateGoal(modalGoal.id, data);
       }

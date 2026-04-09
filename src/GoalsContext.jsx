@@ -37,7 +37,7 @@ export function GoalsProvider({ children }) {
       period: data.target ? 'week' : null,
       days: data.days || null,
       hasNotes: false,
-      tab: 'routine',
+      tab: data.tab || 'routine',
       order: goals.length,
     };
     await saveGoal(user.uid, goal);

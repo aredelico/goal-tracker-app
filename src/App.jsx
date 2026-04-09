@@ -6,10 +6,12 @@ import TodayPage from './pages/TodayPage';
 import CalendarPage from './pages/CalendarPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPage from './pages/SettingsPage';
+import GoalsPage from './pages/GoalsPage';
 import LoginPage from './pages/LoginPage';
 
 const PAGES = {
   today: TodayPage,
+  goals: GoalsPage,
   calendar: CalendarPage,
   stats: StatsPage,
   settings: SettingsPage,
