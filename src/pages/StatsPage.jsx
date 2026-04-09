@@ -87,7 +87,8 @@ const TOOLTIP_STYLE = {
 
 export default function StatsPage() {
   const { user } = useAuth();
-  const { goals } = useGoals();
+  const { goals: allGoals } = useGoals();
+  const goals = allGoals.filter((g) => !g.tab || g.tab === 'routine');
   const [period, setPeriod] = useState('30D');
   const [goalStats, setGoalStats] = useState([]);
   const [chartData, setChartData] = useState([]);

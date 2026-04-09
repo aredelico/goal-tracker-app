@@ -11,7 +11,7 @@ export default function LoginPage() {
           GOAL TRACKER
         </h1>
         <p className="font-mono text-xs text-[#6b6b8a] tracking-wider">
-          DARK TERMINAL MEETS VINYL
+          I'm doing it.
         </p>
       </div>
 

@@ -14,7 +14,7 @@ const EMOJIS = [
   '🌅','🍳','🧹','🌿','🤝','💬','🎁','🍎','🧗','🎲',
 ];
 
-export default function GoalFormModal({ goal, onSave, onDelete, onClose }) {
+export default function GoalFormModal({ goal, onSave, onDelete, onClose, simpleMode = false }) {
   const isEditing = !!goal;
 
   const [emoji, setEmoji] = useState(goal?.emoji || '📌');
@@ -120,8 +120,8 @@ export default function GoalFormModal({ goal, onSave, onDelete, onClose }) {
             </div>
           )}
 
-          {/* Target toggle */}
-          <button
+          {/* Target toggle — hidden in simpleMode */}
+          {!simpleMode && <button
             onClick={() => setHasTarget((v) => !v)}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-surface border border-border mb-2"
           >
@@ -149,10 +149,10 @@ export default function GoalFormModal({ goal, onSave, onDelete, onClose }) {
                 <span className="font-mono text-xs text-text-muted">× / wk</span>
               </div>
             )}
-          </button>
+          </button>}
 
           {/* Specific days (only when target is set) */}
-          {hasTarget && (
+          {!simpleMode && hasTarget && (
             <div className="mb-4">
               <button
                 onClick={() => setSpecificDays((v) => !v)}

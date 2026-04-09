@@ -67,7 +67,8 @@ function buildMonthCells(year, month) {
 // ── Component ──────────────────────────────────────────────────────────────
 export default function CalendarPage() {
   const { user } = useAuth();
-  const { goals } = useGoals();
+  const { goals: allGoals } = useGoals();
+  const goals = allGoals.filter((g) => !g.tab || g.tab === 'routine');
   const [view, setView] = useState('macro');
 
   // Macro state

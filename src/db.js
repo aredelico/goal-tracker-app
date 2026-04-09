@@ -118,6 +118,35 @@ export async function removeGoal(uid, goalId) {
   await deleteDoc(goalDocRef(uid, goalId));
 }
 
+// ── Entries ────────────────────────────────────────────────────────────────
+// Firestore path: users/{uid}/entries/{entryId}
+
+function entriesCol(uid) {
+  return collection(firestore, 'users', uid, 'entries');
+}
+
+function entryDocRef(uid, entryId) {
+  return doc(firestore, 'users', uid, 'entries', entryId);
+}
+
+/** Fetch all entries for a user. */
+export async function getAllEntries(uid) {
+  const snap = await getDocs(entriesCol(uid));
+  return snap.docs.map((d) => d.data());
+}
+
+/** Create or update a single entry. */
+export async function saveEntry(uid, entry) {
+  await setDoc(entryDocRef(uid, entry.id), entry);
+}
+
+/** Delete an entry. */
+export async function removeEntry(uid, entryId) {
+  await deleteDoc(entryDocRef(uid, entryId));
+}
+
+// ── Goals ──────────────────────────────────────────────────────────────────
+
 /** Seed goals from hardcoded defaults. Only call when user has no goals yet. */
 export async function seedGoals(uid, goals) {
   const batch = writeBatch(firestore);
