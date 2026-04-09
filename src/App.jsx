@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './AuthContext';
+import { GoalsProvider } from './GoalsContext';
 import Layout from './components/Layout';
 import TodayPage from './pages/TodayPage';
 import CalendarPage from './pages/CalendarPage';
@@ -32,9 +33,11 @@ function AppContent() {
 
   const Page = PAGES[page];
   return (
-    <Layout active={page} onNavigate={setPage}>
-      <Page />
-    </Layout>
+    <GoalsProvider>
+      <Layout active={page} onNavigate={setPage}>
+        <Page />
+      </Layout>
+    </GoalsProvider>
   );
 }
 

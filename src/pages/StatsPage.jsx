@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { GOALS } from '../goals';
 import { getCheckinsInRange } from '../db';
 import { useAuth } from '../AuthContext';
 import { today, addDays, parseDate, getMondayOfWeek } from '../utils/dates';
+import { useGoals } from '../GoalsContext';
 
 const PERIODS = ['7D', '30D', '90D'];
 const PERIOD_DAYS = { '7D': 7, '30D': 30, '90D': 90 };
@@ -19,7 +19,7 @@ function countPossibleDays(goal, fromDate, totalDays) {
   return count;
 }
 
-async function loadStats(uid, period) {
+async function loadStats(uid, period, goals) {
   const days = PERIOD_DAYS[period];
   const toDate = today();
   const fromDate = addDays(toDate, -(days - 1));
@@ -27,28 +27,30 @@ async function loadStats(uid, period) {
   const rows = await getCheckinsInRange(uid, fromDate, toDate);
 
   // Per-goal completion rates
-  const goalStats = GOALS.map((goal) => {
+  const goalStats = goals.map((goal) => {
     const actual = rows.filter((r) => r.goalId === goal.id).length;
     const possible = countPossibleDays(goal, fromDate, days);
     const rate = possible > 0 ? Math.round((actual / possible) * 100) : 0;
     return { goal, actual, possible, rate };
   });
 
+  // Overall stats
+  const activeDays = new Set(rows.map((r) => r.date)).size;
+  const ratedGoals = goalStats.filter((gs) => gs.goal.target);
+  const avgRate = ratedGoals.length > 0
+    ? Math.round(ratedGoals.reduce((sum, gs) => sum + gs.rate, 0) / ratedGoals.length)
+    : 0;
+
   // Chart data
   let chartData;
   if (period === '7D') {
     chartData = Array.from({ length: 7 }, (_, i) => {
       const d = addDays(fromDate, i);
-      const entry = {
-        label: parseDate(d).toLocaleDateString('en-US', { weekday: 'short' }),
-      };
-      GOALS.forEach((g) => {
-        entry[g.id] = rows.some((r) => r.goalId === g.id && r.date === d) ? 1 : 0;
-      });
+      const entry = { label: parseDate(d).toLocaleDateString('en-US', { weekday: 'short' }) };
+      goals.forEach((g) => { entry[g.id] = rows.some((r) => r.goalId === g.id && r.date === d) ? 1 : 0; });
       return entry;
     });
   } else {
-    // Weekly aggregation — include all weeks even if empty
     const weekMap = new Map();
     let wc = getMondayOfWeek(fromDate);
     while (wc <= toDate) {
@@ -56,7 +58,7 @@ async function loadStats(uid, period) {
         date: wc,
         label: parseDate(wc).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       };
-      GOALS.forEach((g) => { entry[g.id] = 0; });
+      goals.forEach((g) => { entry[g.id] = 0; });
       weekMap.set(wc, entry);
       wc = addDays(wc, 7);
     }
@@ -67,7 +69,7 @@ async function loadStats(uid, period) {
     chartData = [...weekMap.values()];
   }
 
-  return { goalStats, chartData };
+  return { goalStats, chartData, overall: { activeDays, avgRate, totalCheckins: rows.length } };
 }
 
 const TOOLTIP_STYLE = {
@@ -85,15 +87,20 @@ const TOOLTIP_STYLE = {
 
 export default function StatsPage() {
   const { user } = useAuth();
+  const { goals } = useGoals();
   const [period, setPeriod] = useState('30D');
   const [goalStats, setGoalStats] = useState([]);
   const [chartData, setChartData] = useState([]);
+  const [overall, setOverall] = useState(null);
 
   useEffect(() => {
-    loadStats(user.uid, period).then(({ goalStats, chartData }) => {
+    loadStats(user.uid, period, goals).then(({ goalStats, chartData, overall }) => {
       setGoalStats(goalStats);
       setChartData(chartData);
+      setOverall(overall);
     });
+    // goals excluded: it's derived from localStorage + static GOALS, stable within a session
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.uid, period]);
 
   return (
@@ -119,13 +126,32 @@ export default function StatsPage() {
         </div>
       </header>
 
-      {/* Completion rate cards */}
+      {/* Overall stats */}
+      {overall && (
+        <div className="glass rounded-xl p-4 mb-5">
+          <p className="font-mono text-[10px] text-text-muted tracking-widest mb-3">OVERALL</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'Avg rate', value: `${overall.avgRate}%` },
+              { label: 'Active days', value: overall.activeDays },
+              { label: 'Check-ins', value: overall.totalCheckins },
+            ].map(({ label, value }) => (
+              <div key={label} className="text-center">
+                <p className="font-mono text-xl font-bold" style={{ color: '#00ff88' }}>{value}</p>
+                <p className="font-mono text-[9px] text-text-muted tracking-wider mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Per-goal completion rate cards */}
       <div className="space-y-3 mb-5">
         {goalStats.map(({ goal, actual, possible, rate }) => (
           <div key={goal.id} className="glass rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="font-mono text-sm font-medium" style={{ color: goal.color }}>
-                {goal.emoji} {goal.name}
+                <span style={{ filter: 'grayscale(1)' }}>{goal.emoji}</span> {goal.name}
               </span>
               {goal.target ? (
                 <span className="font-mono text-xs text-text-muted">
@@ -172,14 +198,14 @@ export default function StatsPage() {
               allowDecimals={false}
             />
             <Tooltip {...TOOLTIP_STYLE} />
-            {GOALS.map((g, i) => (
+            {goals.map((g, i) => (
               <Bar
                 key={g.id}
                 dataKey={g.id}
                 stackId="a"
                 fill={g.color}
                 name={g.name}
-                radius={i === GOALS.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+                radius={i === goals.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
               />
             ))}
           </BarChart>
@@ -187,7 +213,7 @@ export default function StatsPage() {
 
         {/* Legend */}
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-          {GOALS.map((g) => (
+          {goals.map((g) => (
             <div key={g.id} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: g.color }} />
               <span className="font-mono text-[9px] text-text-muted">{g.name}</span>

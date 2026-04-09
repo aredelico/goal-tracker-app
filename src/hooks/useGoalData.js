@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAllCheckinsForDate, toggleCheckin, saveCheckinWithNotes, getCheckinsInRange } from '../db';
 import { useAuth } from '../AuthContext';
-import { GOALS } from '../goals';
 import { computeStreak, computeBestStreak } from '../utils/streak';
 import { formatDate, parseDate } from '../utils/dates';
 
-export function useGoalData(date) {
+export function useGoalData(date, goals) {
   const { user } = useAuth();
   const uid = user.uid;
 
@@ -37,9 +36,10 @@ export function useGoalData(date) {
   }, [uid, date]);
 
   useEffect(() => {
+    if (!goals.length) return;
     const streakResult = {};
     const bestResult = {};
-    GOALS.forEach((g) => {
+    goals.forEach((g) => {
       const set = new Set(historicalSets[g.id] || []);
       if (checkins[g.id]?.done) set.add(date);
       else set.delete(date);
@@ -48,7 +48,7 @@ export function useGoalData(date) {
     });
     setStreaks(streakResult);
     setBestStreaks(bestResult);
-  }, [historicalSets, checkins, date]);
+  }, [historicalSets, checkins, date, goals]);
 
   const toggle = useCallback(
     async (goalId) => {
